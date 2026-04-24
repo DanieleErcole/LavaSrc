@@ -189,14 +189,25 @@ public class YtdlpAudioSourceManager extends ExtendedAudioSourceManager implemen
 		return new YtdlpAudioPlaylist(title, tracks, ExtendedAudioPlaylist.Type.PLAYLIST, url, thumbnailUrl, null, null);
 	}
 
+	// Yt-dlp with the --flat-playlist parameter returns also the deleted/private videos, which have all fields == null
 	public AudioTrack parseVideo(JsonBrowser json) {
 		var title = json.get("title").text();
+		if (title == null)
+			title = "Unknown track";
+
 		var author = json.get("uploader").text();
+		if (author == null)
+			author = "Unknown";
+
 		var identifier = json.get("id").text();
 		var thumbnailUrl = json.get("thumbnail").text();
+
 		var duration = json.get("duration").asLong(0) * 1000;
+		if (duration == 0L) // It's probably a deleted/private video
+			return null;
+
 		var isLive = json.get("is_live").asBoolean(false);
-		var url = json.get("url").text();
+		var url = json.get("url").safeText();
 
 		return new YtdlpAudioTrack(
 			new AudioTrackInfo(title, author, duration, identifier, isLive, url, thumbnailUrl, null),
