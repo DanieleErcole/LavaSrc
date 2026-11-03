@@ -42,11 +42,11 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 
 	public static final Pattern URL_PATTERN = Pattern.compile("(https?://)(www\\.)?open\\.spotify\\.com/((?<region>[a-zA-Z-]+)/)?(user/(?<user>[a-zA-Z0-9-_]+)/)?(?<type>track|album|playlist|artist)/(?<identifier>[a-zA-Z0-9-_]+)");
 	public static final Pattern RADIO_MIX_QUERY_PATTERN = Pattern.compile("mix:(?<seedType>album|artist|track|isrc):(?<seed>[a-zA-Z0-9-_]+)");
+	public static final Pattern SHARE_URL_PATTERN = Pattern.compile("https?://(open\\.spotify\\.com/s|spotify\\.link)/[a-zA-Z0-9-_]+");
 	public static final String SEARCH_PREFIX = "spsearch:";
 	public static final String RECOMMENDATIONS_PREFIX = "sprec:";
 	public static final String PREVIEW_PREFIX = "spprev:";
 	public static final long PREVIEW_LENGTH = 30000;
-	public static final String SHARE_URL = "https://spotify.link/";
 	public static final int PLAYLIST_MAX_PAGE_ITEMS = 100;
 	public static final int ALBUM_MAX_PAGE_ITEMS = 50;
 	public static final String API_BASE = "https://api.spotify.com/v1/";
@@ -261,7 +261,7 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 			}
 
 			// If the identifier is a share URL, we need to follow the redirect to find out the real url behind it
-			if (identifier.startsWith(SHARE_URL)) {
+			if (SHARE_URL_PATTERN.matcher(identifier).lookingAt()) {
 				var request = new HttpHead(identifier);
 				request.setConfig(RequestConfig.custom().setRedirectsEnabled(false).build());
 				try (var response = this.httpInterfaceManager.getInterface().execute(request)) {
@@ -441,7 +441,7 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 				if (partnerRecommendations != AudioReference.NO_TRACK) {
 					return partnerRecommendations;
 				}
-			} catch (IOException e) {
+			} catch (IOException | FriendlyException e) {
 				log.warn("Partner API recommendations failed for '{}', falling back to Spotify v1 API", seedTrackId, e);
 			}
 		}
@@ -475,7 +475,7 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 				if (partnerAlbum != AudioReference.NO_TRACK) {
 					return partnerAlbum;
 				}
-			} catch (IOException e) {
+			} catch (IOException | FriendlyException e) {
 				log.warn("Partner API failed for album {}, falling back to Spotify v1 API", id, e);
 			}
 		}
@@ -535,7 +535,7 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 				if (playlist != AudioReference.NO_TRACK) {
 					return playlist;
 				}
-			} catch (IOException e) {
+			} catch (IOException | FriendlyException e) {
 				log.warn("Partner API failed for playlist {}, falling back to Spotify v1 API", id, e);
 			}
 		}
@@ -581,7 +581,7 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 				if (partnerArtist != AudioReference.NO_TRACK) {
 					return partnerArtist;
 				}
-			} catch (IOException e) {
+			} catch (IOException | FriendlyException e) {
 				log.warn("Partner API failed for artist {}, falling back to Spotify v1 API", id, e);
 			}
 		}
@@ -614,7 +614,7 @@ public class SpotifySourceManager extends MirroringAudioSourceManager implements
 				if (partnerTrack != AudioReference.NO_TRACK) {
 					return partnerTrack;
 				}
-			} catch (IOException e) {
+			} catch (IOException | FriendlyException e) {
 				log.warn("Partner API failed for track {}, falling back to Spotify v1 API", id, e);
 			}
 		}
